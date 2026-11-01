@@ -33,33 +33,40 @@ set "PYARGS="
 
 :python_ready
 
-echo [1/6] Python detected:
+echo [1/7] Python detected:
 %PYEXE% %PYARGS% --version
 echo.
 
-echo [2/6] Installing build tools, NDI preview, and PTZ dependencies...
+echo [2/7] Installing build tools, NDI preview, and PTZ dependencies...
 %PYEXE% %PYARGS% -m pip install --upgrade pyinstaller pygrabber comtypes ndi-python opencv-contrib-python-headless numpy
 if errorlevel 1 goto :failed
 
 echo.
-echo [3/6] Building Pocket3-PTZ-Node.exe...
+echo [3/7] Building Pocket3-PTZ-Node.exe...
 %PYEXE% %PYARGS% -m PyInstaller --noconfirm --clean --onefile --windowed --name Pocket3-PTZ-Node --add-data "director-panel.html;." --hidden-import pygrabber.dshow_graph --collect-submodules comtypes --collect-submodules cv2 ptz-server.py
 if errorlevel 1 goto :failed
 
 echo.
-echo [4/6] Building Pocket3-Director.exe...
+echo [4/7] Building Feiyu-Pocket3-Node.exe...
+%PYEXE% %PYARGS% -m PyInstaller --noconfirm --clean --onefile --console --name Feiyu-Pocket3-Node --add-data "director-panel.html;." feiyu-server.py
+if errorlevel 1 goto :failed
+
+echo.
+echo [5/7] Building Pocket3-Director.exe...
 %PYEXE% %PYARGS% -m PyInstaller --noconfirm --clean --onefile --windowed --name Pocket3-Director --add-data "director-panel.html;." --hidden-import NDIlib --collect-submodules cv2 director-console.py
 if errorlevel 1 goto :failed
 
 echo.
-echo [5/6] Building Pocket3-Multi-Launcher.exe...
+echo [6/7] Building Pocket3-Multi-Launcher.exe...
 %PYEXE% %PYARGS% -m PyInstaller --noconfirm --clean --onefile --console --name Pocket3-Multi-Launcher --hidden-import pygrabber.dshow_graph --collect-submodules comtypes multi-ptz-launcher.py
 if errorlevel 1 goto :failed
 
 echo.
-echo [6/6] Copying completed EXE files...
+echo [7/7] Copying completed EXE files...
 if not exist "EXE" mkdir "EXE"
 copy /y "dist\Pocket3-PTZ-Node.exe" "EXE\Pocket3-PTZ-Node.exe" >nul
+if errorlevel 1 goto :failed
+copy /y "dist\Feiyu-Pocket3-Node.exe" "EXE\Feiyu-Pocket3-Node.exe" >nul
 if errorlevel 1 goto :failed
 copy /y "dist\Pocket3-Director.exe" "EXE\Pocket3-Director.exe" >nul
 if errorlevel 1 goto :failed
@@ -72,6 +79,7 @@ echo BUILD SUCCESS
 echo Output folder: %CD%\EXE
 echo ============================================================
 echo Pocket3-PTZ-Node.exe : install on every Pocket 3 computer
+echo Feiyu-Pocket3-Node.exe : experimental Feiyu Wi-Fi control node
 echo Pocket3-Multi-Launcher.exe : auto-detect and start up to 5 DJI cameras
 echo Pocket3-Director.exe : install on the director computer
 echo.

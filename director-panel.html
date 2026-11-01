@@ -33,6 +33,8 @@ button,input,select{font:inherit}
 .hw{border:1px solid #08090a;border-radius:4px;color:#d0d4d7;background:linear-gradient(#494d50,#26292b 52%,#181a1c);box-shadow:inset 0 1px #ffffff2c,0 3px 5px #0009;
   padding:7px 8px;min-height:34px;font-size:9px;font-weight:750;letter-spacing:.05em;cursor:pointer;touch-action:none;text-shadow:0 1px #000}
 .hw:hover{filter:brightness(1.12)}.hw:active,.hw.active{transform:translateY(2px);background:#202325;box-shadow:inset 0 2px 5px #000}
+.hw:disabled,.zoom button:disabled,input:disabled,select:disabled{cursor:not-allowed;opacity:.32;filter:saturate(.3)}
+.feature-disabled{opacity:.38;filter:saturate(.35)}
 .hw.red{background:linear-gradient(#87362f,#4c1815);color:#ffd7d3}.hw.red.active{background:var(--red);box-shadow:0 0 12px #e5403799}
 .hw.amber.active{background:#94671a}.hw.danger.active{background:#b52e28}.control-grid{display:grid;grid-template-columns:1fr 106px;gap:10px;align-items:center}
 .joy-well{width:min(220px,100%);aspect-ratio:1;margin:auto;padding:19px;border:2px solid #070809;border-radius:50%;background:radial-gradient(circle,#24282a 0 42%,#101214 72%,#050607 100%);box-shadow:inset 0 8px 18px #000,0 2px #555}
@@ -116,7 +118,7 @@ let activeChannelIndex=0;
 
 class PTZChannel{
   constructor(index){
-    this.index=index;this.mode='recall';this.bank=0;this.presets=[];this.recalled=0;this.pollBusy=false;this.online=false;this.moving=false;this.position=null;
+    this.index=index;this.mode='recall';this.bank=0;this.presets=[];this.recalled=0;this.pollBusy=false;this.online=false;this.moving=false;this.position=null;this.capabilities={pan:true,tilt:true,zoom:true,center:true,presets:true,preview:true,tracking:true,device_select:true};
     const fragment=document.getElementById('channelTemplate').content.cloneNode(true);this.el=fragment.querySelector('.channel');
     this.el.querySelector('[data-role="number"]').textContent=index+1;document.getElementById('channels').appendChild(fragment);
     this.el=document.getElementById('channels').lastElementChild;
@@ -154,12 +156,12 @@ class PTZChannel{
   }
   stop(){if(this.stopJoystick)this.stopJoystick();this.disableTracking();this.moving=false;this.api('/stop').catch(()=>{});this.renderPresets();}
   keyboardMove(pan,tilt){this.disableTracking();this.api(`/vel?pan=${pan}&tilt=${tilt}`).catch(()=>{});}
-  keyboardZoom(value){this.disableTracking();this.api(`/vel?zoom=${value}`).catch(()=>{});}
+  keyboardZoom(value){if(!this.capabilities.zoom)return;this.disableTracking();this.api(`/vel?zoom=${value}`).catch(()=>{});}
   setMode(mode){this.mode=this.mode===mode?'recall':mode;this.qa('[data-mode]').forEach(b=>b.classList.toggle('active',b.dataset.mode===this.mode));
     const labels={recall:'按機位鍵叫出 Preset',store:'選一格儲存位置、秒數與動態曲線',rename:'選一格重新命名',delete:'選一格刪除 Preset'};this.q('[data-role="mode-tip"]').textContent=labels[this.mode];}
   motionSettings(){const input=this.q('[data-role="move-duration"]'),curve=this.q('[data-role="move-curve"]');const duration=clamp(Number(input.value)||4,.5,60);input.value=duration;return{duration,curve:curve.value};}
   presetInfo(n){return this.presets.find(p=>p.n===n)||{n,saved:false,name:`Preset ${n}`,duration:4,curve:'ease_in_out'};}
-  async usePreset(n){const item=this.presetInfo(n);
+  async usePreset(n){if(!this.capabilities.presets)return;const item=this.presetInfo(n);
     if(this.mode==='store'){const name=prompt(`儲存機位 ${n} 的名稱`,item.saved?item.name:`機位 ${n}`);if(name===null)return;const m=this.motionSettings();await this.api(`/preset/save?n=${n}&name=${encodeURIComponent(name.trim()||`機位 ${n}`)}&duration=${m.duration}&curve=${encodeURIComponent(m.curve)}`).catch(()=>{});}
     else if(this.mode==='rename'){if(!item.saved)return;const name=prompt(`重新命名機位 ${n}`,item.name);if(name===null||!name.trim())return;await this.api(`/preset/rename?n=${n}&name=${encodeURIComponent(name.trim())}`).catch(()=>{});}
     else if(this.mode==='delete'){if(!item.saved||!confirm(`刪除「${item.name}」？`))return;await this.api(`/preset/delete?n=${n}`).catch(()=>{});}
@@ -167,7 +169,7 @@ class PTZChannel{
     this.setMode('recall');setTimeout(()=>this.poll(),180);this.renderPresets();
   }
   renderPresets(){const root=this.q('[data-role="presets"]');root.innerHTML='';for(let offset=1;offset<=5;offset++){const n=this.bank*5+offset,item=this.presetInfo(n),button=document.createElement('button');
-      button.className='hw preset'+(item.saved?' saved':'')+(this.recalled===n&&this.moving?' moving':'');button.innerHTML=`<b>${n}</b><span>${item.saved?`${this.escape(item.name)} · ${Number(item.duration||4).toFixed(1)}s`:'EMPTY'}</span>`;button.onclick=()=>this.usePreset(n);root.appendChild(button);}}
+      button.className='hw preset'+(item.saved?' saved':'')+(this.recalled===n&&this.moving?' moving':'');button.innerHTML=`<b>${n}</b><span>${item.saved?`${this.escape(item.name)} · ${Number(item.duration||4).toFixed(1)}s`:'EMPTY'}</span>`;button.disabled=!this.capabilities.presets;button.onclick=()=>this.usePreset(n);root.appendChild(button);}}
   escape(value){const div=document.createElement('div');div.textContent=value;return div.innerHTML;}
   setupPreview(){const frame=this.q('[data-role="preview-frame"]'),image=this.q('[data-role="ndi-preview"]'),source=this.q('[data-role="ndi-source"]'),mode=this.q('[data-role="track-mode"]');
     if(!directorApp){frame.classList.add('disabled');source.disabled=true;mode.disabled=true;this.q('[data-action="ndi-refresh"]').disabled=true;this.q('[data-action="obs-priority"]').disabled=true;this.q('[data-action="track-stop"]').disabled=true;this.q('[data-role="ndi-state"]').textContent='DIRECTOR EXE ONLY';return;}
@@ -177,23 +179,30 @@ class PTZChannel{
     image.onclick=e=>{if(!source.value)return;const r=image.getBoundingClientRect(),x=clamp((e.clientX-r.left)/r.width,0,1),y=clamp((e.clientY-r.top)/r.height,0,1);mode.value='click';this.setTracking('click').then(()=>this.directorPost('/ndi/target',{camera:this.index,x,y})).catch(error=>this.showNDIError(error));};
     this.refreshNDI(false);this.ndiTimer=setInterval(()=>this.refreshNDI(false),2500+this.index*180);
   }
-  async refreshNDI(force){if(!directorApp)return;try{const response=await fetch('/ndi/status',{cache:'no-store'}),data=await response.json();if(!data.available)throw new Error(data.error||'Video engine unavailable');const select=this.q('[data-role="ndi-source"]'),stored=localStorage.getItem(`ptz-ndi-source-${this.index+1}`)||select.value,ndiSources=Array.isArray(data.sources)?data.sources:[],options=this.base?['__LAN_UVC__',...ndiSources]:ndiSources,saved=options.includes(stored)?stored:(this.base?'__LAN_UVC__':'');
+  async refreshNDI(force){if(!directorApp)return;try{const response=await fetch('/ndi/status',{cache:'no-store'}),data=await response.json();if(!data.available)throw new Error(data.error||'Video engine unavailable');const select=this.q('[data-role="ndi-source"]'),stored=localStorage.getItem(`ptz-ndi-source-${this.index+1}`)||select.value,ndiSources=Array.isArray(data.sources)?data.sources:[],lanUVC=this.base&&this.capabilities.preview,options=lanUVC?['__LAN_UVC__',...ndiSources]:ndiSources,saved=options.includes(stored)?stored:(lanUVC?'__LAN_UVC__':'');
       if(force||select.dataset.key!==options.join('|')){select.dataset.key=options.join('|');select.innerHTML='<option value="">SELECT VIDEO SOURCE</option>';options.forEach(name=>{const option=document.createElement('option');option.value=name;option.textContent=name==='__LAN_UVC__'?'DIRECT UVC LAN · 免 NDI':`NDI · ${name}`;select.appendChild(option);});if(saved)select.value=saved;}
       const info=data.channels?.[this.index]||{},state=this.q('[data-role="ndi-state"]');state.textContent=info.status||`${options.length} SOURCE(S)`;this.el.classList.toggle('tracking-on',info.mode&&info.mode!=='off');if(document.activeElement!==this.q('[data-role="track-mode"]'))this.q('[data-role="track-mode"]').value=info.mode||'off';
-      if(saved&&info.source!==saved){select.value=saved;localStorage.setItem(`ptz-ndi-source-${this.index+1}`,saved);this.applyNDISource();}
+      if(!lanUVC&&info.source==='__LAN_UVC__'){select.value='';localStorage.removeItem(`ptz-ndi-source-${this.index+1}`);await this.directorPost('/ndi/select',{camera:this.index,source:'',endpoint:this.base});}
+      else if(saved&&info.source!==saved){select.value=saved;localStorage.setItem(`ptz-ndi-source-${this.index+1}`,saved);this.applyNDISource();}
     }catch(error){this.showNDIError(error);}}
   async applyNDISource(){if(!directorApp)return;const source=this.q('[data-role="ndi-source"]').value;this.q('[data-role="ndi-state"]').textContent=source?'CONNECTING':'NO SOURCE';try{if(source==='__LAN_UVC__'&&this.base)await fetch(this.base+'/preview/control?enabled=1',{cache:'no-store'});await this.directorPost('/ndi/select',{camera:this.index,source,endpoint:this.base});await this.refreshNDI(false);}catch(error){this.showNDIError(error);}}
-  async toggleOBSMode(){if(!this.base)return;const button=this.q('[data-action="obs-priority"]'),enable=button.dataset.released!=='1';try{if(enable){this.disableTracking();this.q('[data-role="ndi-source"]').value='';localStorage.removeItem(`ptz-ndi-source-${this.index+1}`);await this.directorPost('/ndi/select',{camera:this.index,source:'',endpoint:this.base});await fetch(this.base+'/preview/control?enabled=0',{cache:'no-store'});}else await fetch(this.base+'/preview/control?enabled=1',{cache:'no-store'});setTimeout(()=>this.poll(),150);}catch(error){this.showNDIError(error);}}
-  setTracking(mode){if(!directorApp)return Promise.resolve();this.q('[data-role="track-mode"]').value=mode;this.el.classList.toggle('tracking-on',mode!=='off');return this.directorPost('/ndi/tracking',{camera:this.index,mode}).catch(error=>this.showNDIError(error));}
+  async toggleOBSMode(){if(!this.base||!this.capabilities.preview)return;const button=this.q('[data-action="obs-priority"]'),enable=button.dataset.released!=='1';try{if(enable){this.disableTracking();this.q('[data-role="ndi-source"]').value='';localStorage.removeItem(`ptz-ndi-source-${this.index+1}`);await this.directorPost('/ndi/select',{camera:this.index,source:'',endpoint:this.base});await fetch(this.base+'/preview/control?enabled=0',{cache:'no-store'});}else await fetch(this.base+'/preview/control?enabled=1',{cache:'no-store'});setTimeout(()=>this.poll(),150);}catch(error){this.showNDIError(error);}}
+  setTracking(mode){if(!directorApp||!this.capabilities.tracking)return Promise.resolve();this.q('[data-role="track-mode"]').value=mode;this.el.classList.toggle('tracking-on',mode!=='off');return this.directorPost('/ndi/tracking',{camera:this.index,mode}).catch(error=>this.showNDIError(error));}
   disableTracking(){if(!directorApp)return;const mode=this.q('[data-role="track-mode"]');if(!mode||mode.value==='off')return;mode.value='off';this.el.classList.remove('tracking-on');this.directorPost('/ndi/tracking',{camera:this.index,mode:'off'}).catch(()=>{});}
   showNDIError(error){this.q('[data-role="ndi-state"]').textContent=String(error?.message||error||'NDI ERROR').slice(0,52);}
   setOnline(ok,label){this.online=ok;this.el.classList.toggle('online',ok);this.q('[data-role="link"]').textContent=label;updateMaster();}
+  applyCapabilities(value){const defaults={pan:true,tilt:true,zoom:true,center:true,presets:true,preview:true,tracking:true,device_select:true},previewChanged=this.capabilities.preview!==(value?.preview??true);this.capabilities={...defaults,...(value||{})};
+    if(!this.capabilities.tracking)this.disableTracking();
+    this.qa('[data-zoom]').forEach(button=>button.disabled=!this.capabilities.zoom);this.q('[data-action="home"]').disabled=!this.capabilities.center;this.q('[data-action="set-home"]').disabled=!this.capabilities.center;
+    const presetSection=this.q('.preset-section');presetSection.classList.toggle('feature-disabled',!this.capabilities.presets);presetSection.querySelectorAll('button,input,select').forEach(control=>control.disabled=!this.capabilities.presets);
+    this.q('[data-action="obs-priority"]').disabled=!directorApp||!this.capabilities.preview;this.q('[data-role="track-mode"]').disabled=!directorApp||!this.capabilities.tracking;this.q('[data-action="track-stop"]').disabled=!directorApp||!this.capabilities.tracking;
+    this.q('[data-action="rescan"]').disabled=!this.capabilities.device_select;if(!this.capabilities.presets)this.q('[data-role="mode-tip"]').textContent='此後端沒有絕對位置，Preset 暫停';this.renderPresets();if(previewChanged)this.refreshNDI(true);}
   updateDevices(list,selected,fixed){const select=this.q('[data-role="devices"]'),key=(list||[]).join('|');if(select.dataset.key!==key){select.dataset.key=key;select.innerHTML='';
       if(!list||!list.length){const o=document.createElement('option');o.textContent='NO CAMERA';select.appendChild(o);}else list.forEach((name,i)=>{const o=document.createElement('option');o.value=i;o.textContent=`CAM ${i+1} · ${name}`;select.appendChild(o);});}
-    if(document.activeElement!==select&&selected!=null)select.value=selected;select.disabled=!!fixed;this.q('[data-action="rescan"]').disabled=false;}
+    if(document.activeElement!==select&&selected!=null)select.value=selected;select.disabled=!!fixed||!this.capabilities.device_select;this.q('[data-action="rescan"]').disabled=!this.capabilities.device_select;}
   async poll(){if(this.pollBusy||!this.base){if(!this.base)this.setOnline(false,'NO NODE');return;}const duplicate=channels.find(channel=>channel!==this&&channel.base&&channel.base===this.base);if(duplicate){this.setOnline(false,'DUPLICATE NODE');this.q('[data-role="camera-name"]').textContent=`SAME AS CAMERA ${duplicate.index+1} · USE :8724`;return;}this.pollBusy=true;const abort=new AbortController(),timeout=setTimeout(()=>abort.abort(),1000);
     try{const response=await fetch(this.base+'/status',{cache:'no-store',signal:abort.signal});if(!response.ok)throw new Error();const data=await response.json();
-      this.setOnline(!!data.connected,data.connected?'ONLINE':'NO CAMERA');this.q('[data-role="camera-name"]').textContent=(data.connected?`${data.node_label?data.node_label+' · ':''}${data.connected} · PORT ${data.node_port||'—'}`:'NODE ONLINE · CAMERA OFFLINE');this.moving=!!data.moving;this.position=data.pos||null;
+      this.applyCapabilities(data.capabilities);this.setOnline(!!data.connected,data.connected?'ONLINE':'NO CAMERA');this.q('[data-role="camera-name"]').textContent=(data.connected?`${data.node_label?data.node_label+' · ':''}${data.connected} · PORT ${data.node_port||'—'}`:'NODE ONLINE · CAMERA OFFLINE');this.moving=!!data.moving;this.position=data.pos||null;
       this.q('[data-role="position"]').textContent=`P ${data.pos?.pan??'—'} · T ${data.pos?.tilt??'—'} · Z ${data.pos?.zoom??'—'}`;const speed=Math.round((data.speed||.3)*100);
       this.q('[data-role="speed-readout"]').textContent=speed+'%';const slider=this.q('[data-role="speed"]');if(document.activeElement!==slider)slider.value=speed;this.q('[data-role="speed-value"]').textContent=speed+'%';
       const obsButton=this.q('[data-action="obs-priority"]'),released=data.preview_enabled===false;obsButton.dataset.released=released?'1':'0';obsButton.textContent=released?'UVC MODE':'OBS MODE';obsButton.classList.toggle('active',released);

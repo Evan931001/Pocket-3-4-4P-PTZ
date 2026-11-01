@@ -6,6 +6,8 @@ All notable changes are documented here. This project follows Semantic Versionin
 
 - GitHub community files, CI, documentation, dependency manifests, and repository hygiene.
 - Consolidated ten overlapping launch/firewall/autostart batch files into three menu-driven tools.
+- Experimental Feiyu Pocket 3 PTP/IP heartbeat and UDP pan/tilt backend behind the common node API.
+- Capability-aware Director controls that hide unsupported Feiyu functions.
 
 ## [1.1.0] - 2026-11-01
 

@@ -1126,6 +1126,7 @@ class Handler(BaseHTTPRequestHandler):
             state["rescan_req"] = True
         elif u.path == "/status":
             body = json.dumps({
+                "backend": "dji_directshow_uvc",
                 "connected": state["connected"],
                 "devices": state["devices"],
                 "device_index": state["device_index"],
@@ -1143,6 +1144,16 @@ class Handler(BaseHTTPRequestHandler):
                 "capture_mode": state.get("capture_mode", "WAITING"),
                 "moving": state["goto"] is not None or state["preset_req"] is not None,
                 "pos": {"pan": state["pos"][PAN], "tilt": state["pos"][TILT], "zoom": state["pos"][ZOOM]},
+                "capabilities": {
+                    "pan": True,
+                    "tilt": True,
+                    "zoom": True,
+                    "center": True,
+                    "presets": True,
+                    "preview": PREVIEW_PROFILE != "off",
+                    "tracking": True,
+                    "device_select": FIXED_DEVICE_INDEX is None and not FIXED_DEVICE_MATCH,
+                },
                 "presets": [
                     {
                         "n": number,
