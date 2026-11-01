@@ -32,7 +32,7 @@ git init
 git add .
 git commit -m "release: Pocket 3 PTZ LAN Controller v1.1.0"
 git branch -M main
-git remote add origin https://github.com/Evan931001/Pocket-3-PTZ.git
+git remote add origin https://github.com/Evan931001/Pocket-3-4-4P-PTZ.git
 git push -u origin main
 ```
 
