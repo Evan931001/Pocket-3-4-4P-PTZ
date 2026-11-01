@@ -1,8 +1,8 @@
-# Pocket 3 PTZ LAN Controller
+# Pocket Camera PTZ LAN Controller
 
-在 Windows 區域網路中集中控制多台 DJI Osmo Pocket 3／相容 UVC PTZ 裝置，並將畫面送往導播控制台與 OBS。
+在 Windows 區域網路中集中控制 DJI Osmo Pocket 3／相容 UVC PTZ 裝置，並以實驗性 Wi-Fi 後端支援 Feiyu Pocket 3。兩種相機共用同一套導播控制台與 HTTP API。
 
-> 非 DJI、NDI 或 OBS 官方專案。DJI、Osmo、Pocket、NDI 與 OBS 名稱及商標均屬其各自權利人。
+> 非 DJI、Feiyu、NDI 或 OBS 官方專案。所有名稱及商標均屬其各自權利人。
 
 ## 功能
 
@@ -17,12 +17,14 @@
 - 黑畫面偵測與 UVC 格式自動降級。
 - 單一 Master Console 管理最多五個隱藏節點。
 - PyInstaller 一鍵建立 Windows EXE。
+- Feiyu Pocket 3 實驗性 PTP/IP＋UDP 搖桿控制後端。
 
 ## 系統需求
 
 - Windows 10／11 64-bit
 - Python 3.12（從原始碼執行或建置 EXE 時需要）
 - DJI Osmo Pocket 3 或具 DirectShow PTZ 控制介面的相容裝置
+- Feiyu 模式另需電腦連上相機 Wi-Fi；畫面使用外部 UVC／NDI 來源
 - 有線 Gigabit LAN 建議用於多機 720p 串流
 - NDI 功能需要相容的 NDI Runtime／Tools；Direct UVC LAN 不需要 NDI
 
@@ -33,7 +35,7 @@
 1. 下載或 clone 整個倉庫。
 2. 雙擊 `build-windows-exe.bat`。
 3. 完成後執行 `manage-firewall.bat`，選擇開放LAN連線。
-4. 相機端執行 `start-cameras.bat`，選擇一般或NDI-only模式。
+4. 相機端執行 `start-cameras.bat`，選擇 DJI 一般／NDI-only，或 Feiyu 實驗模式。
 5. 導播端執行 `EXE/Pocket3-Director.exe`。
 
 ### 從原始碼執行
@@ -88,16 +90,16 @@ Camera 2～5 將連接埠依序改成 `8724–8727`。若使用瀏覽器來源�
 | `/stop` | 停止運鏡 |
 | `/preset/*` | 儲存、叫出、命名與刪除 Preset |
 
-完整設定請參閱 [OBS設定](docs/OBS_SETUP.md)、[架構](ARCHITECTURE.md)與[故障排除](docs/TROUBLESHOOTING.md)。
+完整設定請參閱 [Feiyu設定](docs/FEIYU_SETUP.md)、[OBS設定](docs/OBS_SETUP.md)、[架構](ARCHITECTURE.md)與[故障排除](docs/TROUBLESHOOTING.md)。
 
 ## Windows管理工具
 
 | 檔案 | 用途 |
 |---|---|
-| `start-cameras.bat` | 啟動最多五台節點，選擇一般／NDI-only模式 |
+| `start-cameras.bat` | 啟動 DJI 多機節點或 Feiyu 實驗節點 |
 | `manage-firewall.bat` | 新增或移除LAN防火牆規則 |
 | `manage-autostart.bat` | 管理Node與Director登入自動啟動 |
-| `build-windows-exe.bat` | 建立三支Windows EXE |
+| `build-windows-exe.bat` | 建立 DJI、Feiyu 與 Director Windows EXE |
 
 ## 已知限制
 
@@ -105,6 +107,7 @@ Camera 2～5 將連接埠依序改成 `8724–8727`。若使用瀏覽器來源�
 - MJPEG適合校內區網與低複雜度部署；對極低延遲正式製播，NDI或硬體影像介面仍較理想。
 - DJI內部ActiveTrack演算法未提供公開UVC控制介面；目前自動追蹤為本專案的軟體追蹤。
 - 導播介面目前顯示三個控制盤面，節點與OBS輸出最多五台。
+- Feiyu 後端目前沒有絕對位置、變焦、Home、Preset 與節點內建預覽，且尚待目標韌體實機驗證。
 
 ## 貢獻與安全
 
@@ -116,4 +119,4 @@ Camera 2～5 將連接埠依序改成 `8724–8727`。若使用瀏覽器來源�
 
 ---
 
-English: A Windows LAN controller for multiple DJI Osmo Pocket 3 compatible UVC/PTZ devices, featuring presets, scene macros, NDI/direct previews, shared OBS MJPEG output, and a three-channel director console.
+English: A Windows LAN controller with a shared Director/API for DJI-compatible UVC/PTZ cameras and an experimental Feiyu Pocket 3 Wi-Fi control backend.

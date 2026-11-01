@@ -10,3 +10,4 @@ Possible future work, not a delivery promise:
 - automated Windows integration tests with virtual capture devices;
 - localization and accessible keyboard navigation;
 - structured logs and diagnostics bundle.
+- hardware-validation matrix for Feiyu firmware versions, followed by tracking and multi-adapter routing tests.
