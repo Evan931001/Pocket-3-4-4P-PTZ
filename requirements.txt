@@ -2,4 +2,4 @@ comtypes>=1.4.0
 numpy>=1.26.0
 opencv-contrib-python-headless>=4.9.0
 pygrabber>=0.2
-ndi-python>=5.1.1; platform_system == "Windows"
+ndi-python>=6.3.2.6; platform_system == "Windows"
