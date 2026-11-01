@@ -22,7 +22,7 @@ jobs:
         run: python -m py_compile ptz-server.py multi-ptz-launcher.py director-console.py ndi_preview.py
       - name: Lint Python
         run: ruff check --select E9,F63,F7,F82 *.py
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: "22"
       - name: Validate embedded JavaScript
