@@ -1,7 +1,7 @@
 @echo off
 setlocal EnableExtensions
 pushd "%~dp0"
-title Pocket 3 PTZ Dual Camera Launcher
+title Pocket 3 PTZ Multi Camera Launcher
 
 py -3.12 -c "import sys" >nul 2>nul
 if not errorlevel 1 goto :use_py312
@@ -33,13 +33,13 @@ echo Detecting and starting up to five independent DJI PTZ nodes...
 echo PORT RANGE: 8723 - 8727
 echo ============================================================
 echo.
-echo One server window will open for each detected DJI camera.
+echo Camera nodes run hidden; status is shown in this master console.
 echo OBS Virtual Camera and non-DJI webcams will be skipped.
 echo.
 
 %PYCMD% multi-ptz-launcher.py --max-cameras 5 --start-port 8723
 echo.
-echo Keep every CAMERA server window open during the broadcast.
+echo Keep this MASTER CONSOLE open during the broadcast.
 pause
 popd
 exit /b 0

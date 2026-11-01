@@ -1,12 +1,32 @@
-# 執行時產生的設定（每台機器不同，不上傳）
-ptz-config.json
-uvc-gui-config.json
-
 # Python
 __pycache__/
-*.pyc
+*.py[cod]
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
 
-# 測試 / 暫存
-_t.py
-_test_server.py
+# PyInstaller
+build/
+dist/
+EXE/
+*.spec
+
+# Runtime-generated files
+ptz-config*.json
+Pocket3-PTZ-Node-*.log
+
+# Editors and OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Local packages and recordings
 *.zip
+*.mp4
+*.mov
+*.mkv

@@ -1258,7 +1258,7 @@ def main():
     else:
         print("未偵測到區網 IPv4；請用 ipconfig 查詢送畫面電腦的 IPv4 位址。")
     print("導播台 OBS：停駐視窗 → 自訂瀏覽器停駐視窗 → 貼上導播台控制網址")
-    print("若導播台打不開，請以系統管理員身分執行 allow-firewall-lan.bat。")
+    print("若導播台打不開，請執行 manage-firewall.bat 並選擇 Allow。")
     print("按 Ctrl+C 停止。")
     print("=" * 68)
     try:

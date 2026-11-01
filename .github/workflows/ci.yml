@@ -1,0 +1,35 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install validation tools
+        run: python -m pip install ruff
+      - name: Compile Python
+        run: python -m py_compile ptz-server.py multi-ptz-launcher.py director-console.py ndi_preview.py
+      - name: Lint Python
+        run: ruff check --select E9,F63,F7,F82 *.py
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Validate embedded JavaScript
+        shell: pwsh
+        run: |
+          $html = Get-Content director-panel.html -Raw
+          $match = [regex]::Match($html, '<script>([\s\S]*?)</script>')
+          if (-not $match.Success) { throw 'No script block found' }
+          $match.Groups[1].Value | Set-Content "$env:RUNNER_TEMP\director-panel.js"
+          node --check "$env:RUNNER_TEMP\director-panel.js"

@@ -1,185 +1,119 @@
-# Pocket 3 PTZ Control (USB-C / UVC)
+# Pocket 3 PTZ LAN Controller
 
-**English** | [繁體中文](#中文說明)
+在 Windows 區域網路中集中控制多台 DJI Osmo Pocket 3／相容 UVC PTZ 裝置，並將畫面送往導播控制台與 OBS。
 
+> 非 DJI、NDI 或 OBS 官方專案。DJI、Osmo、Pocket、NDI 與 OBS 名稱及商標均屬其各自權利人。
 
+## 功能
 
-https://github.com/user-attachments/assets/bf871656-94cc-4690-b375-86fd611c2984
+- 自動偵測最多五台 DJI／Osmo／Pocket UVC 裝置。
+- 每台相機使用獨立節點與連接埠 `8723–8727`。
+- Blackmagic 風格三機導播介面。
+- 搖桿、鍵盤、變焦、Home、速度控制。
+- 每台最多 20 組可命名 Preset，支援完成秒數與動態曲線。
+- 三機場景巨集。
+- Direct UVC LAN、NDI 預覽與軟體追蹤。
+- OBS 共用 MJPEG 輸出：相機只開啟一次 UVC。
+- 黑畫面偵測與 UVC 格式自動降級。
+- 單一 Master Console 管理最多五個隱藏節點。
+- PyInstaller 一鍵建立 Windows EXE。
 
+## 系統需求
 
-https://github.com/user-attachments/assets/3da6e8b5-fa68-48db-87b9-4178a6510f8f
+- Windows 10／11 64-bit
+- Python 3.12（從原始碼執行或建置 EXE 時需要）
+- DJI Osmo Pocket 3 或具 DirectShow PTZ 控制介面的相容裝置
+- 有線 Gigabit LAN 建議用於多機 720p 串流
+- NDI 功能需要相容的 NDI Runtime／Tools；Direct UVC LAN 不需要 NDI
 
+## 快速開始
 
+### 建立 EXE
 
+1. 下載或 clone 整個倉庫。
+2. 雙擊 `build-windows-exe.bat`。
+3. 完成後執行 `manage-firewall.bat`，選擇開放LAN連線。
+4. 相機端執行 `start-cameras.bat`，選擇一般或NDI-only模式。
+5. 導播端執行 `EXE/Pocket3-Director.exe`。
 
+### 從原始碼執行
 
-
-
-Turn a DJI Osmo Pocket 3 into a remote-controllable PTZ camera over a single
-USB-C cable. It uses Windows DirectShow UVC camera control (the same path behind
-OBS's "Camera Control" sliders) to drive pan / tilt / zoom in real time —
-**without taking over the video stream**, so you can output the camera in OBS and
-control the gimbal at the same time. Bluetooth (BLE/DUML) does **not** work for
-gimbal control on the Pocket 3, which is why this project uses the UVC route.
-
-## 1. Setup (once per machine)
-
-1. **Install Python 3.12 (64-bit)** from https://www.python.org/downloads/ and
-   tick **"Add Python to PATH"**. (The OBS native-script option only accepts 3.12.)
-2. **Install packages:**
-   ```
-   pip install pygrabber comtypes keyboard
-   ```
-3. **Connect the camera:** plug the Pocket 3 in via USB-C and choose **Webcam mode**
-   on the camera screen.
-
-## 2. Four ways to use it
-
-### A. OBS dock panel (recommended)
-1. Double-click `start-ptz.bat`. A console shows "PTZ panel started" and auto-connects.
-   **Keep that window open** (it is the control core).
-2. In OBS: **Docks → Custom Browser Docks**, add one with URL:
-   ```
-   http://127.0.0.1:8723/
-   ```
-3. A panel appears inside OBS with an analog joystick, Center, Zoom, and Sensitivity.
-
-### B. Standalone GUI
-Double-click `start-gui.bat`, or:
+```powershell
+py -3.12 -m venv .venv
+.venv\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
+python multi-ptz-launcher.py --max-cameras 5 --start-port 8723
 ```
-python uvc-gui.py
+
+另一台導播電腦執行：
+
+```powershell
+python director-console.py
 ```
-Analog joystick, live values, customizable keys (click a key button, then press a key),
-and a **language switch (中文 / English)** in the top-right.
 
-> **Shared settings:** the GUI and the OBS panel share `ptz-config.json`, so sensitivity,
-> center angle, and the chosen camera carry over. Custom keys are GUI-only (the panel uses buttons).
+## 連接埠
 
-### C. Numpad control
+| 相機 | 控制與預覽 |
+|---|---:|
+| Camera 1 | 8723 |
+| Camera 2 | 8724 |
+| Camera 3 | 8725 |
+| Camera 4 | 8726 |
+| Camera 5 | 8727 |
+
+導播台輸入節點網址，例如 `http://192.168.1.100:8723`。
+
+## OBS輸出
+
+OBS 建議使用「媒體來源」，取消勾選本機檔案，輸入：
+
+```text
+http://CAMERA_PC_IP:8723/obs.mjpg
 ```
-python uvc-numpad.py
-```
-Numpad: `8/2/4/6` = tilt/pan, `5` = center, `7/9` = zoom, `+/-` = speed, `/` = quit.
 
-### D. OBS native hotkeys
-Load `pocket-ptz-obs.py` via OBS **Tools → Scripts** (first point Python Settings at your
-Python 3.12 folder; the bottom line must read `Python 3.12.x`). Assign keys under
-**Settings → Hotkeys**, search "Pocket".
+Camera 2～5 將連接埠依序改成 `8724–8727`。若使用瀏覽器來源，也可以輸入 `/obs`，但 MJPEG 媒體來源通常較順。
 
-## 3. Troubleshooting
-- **Camera not auto-detected / wrong camera:** every tool lets you pick manually —
-  the OBS panel has a camera dropdown + ⟳ rescan button at the top; the GUI has a device
-  dropdown; `uvc-numpad.py` / `uvc-smooth.py` list all devices and ask you to type an index
-  (or pass one: `python uvc-numpad.py 2`); the OBS script has a device list in its properties.
-  Your choice is saved to `ptz-config.json`.
-- **No camera / empty list:** confirm Webcam mode; confirm `pygrabber comtypes` are installed
-  in the Python you actually use.
-- **Connected but nothing moves:** run `python uvc-ptz2.py` to probe supported pan/tilt/zoom ranges.
-- **OBS script shows "No properties available":** Python Settings still says "not loaded" — point it
-  at the folder containing `python.exe`; it must show `Python 3.12.x`.
-- **Center / Home:** "Home" is a remembered position, not a fixed angle (the camera's UVC units
-  aren't real degrees). Aim the camera where you want, click **Set current as home** (GUI) or
-  **Set home** (OBS panel), and **Center** returns there. Saved in `ptz-config.json` and shared
-  between the GUI and the OBS panel.
+不要讓 OBS 的「視訊擷取裝置」與本程式同時直接開啟同一台 Pocket 3，否則 Windows UVC 驅動可能發生黑畫面或離線。
 
-## 4. Limitations
-- **ActiveTrack cannot be triggered over USB** (a DJI restriction). Tap the subject on the camera screen.
-- **Zoom is digital**, same as the camera itself.
+## API摘要
 
-## Files
-| File | Purpose |
-|------|---------|
-| `ptz-server.py` | Background control program + web panel (for the OBS browser dock) |
-| `start-ptz.bat` | Double-click launcher for `ptz-server.py` |
-| `uvc-gui.py` | Standalone GUI (joystick, custom keys, language switch) |
-| `start-gui.bat` | Double-click launcher for `uvc-gui.py` |
-| `uvc-numpad.py` | Numpad control |
-| `uvc-smooth.py` | Arrow-key control (smoothed) |
-| `uvc-ptz2.py` | Probe tool: lists supported controls and ranges |
-| `pocket-ptz-obs.py` | OBS native-hotkey script |
-| `COMPANION.md` | Bitfocus Companion / Stream Deck guide |
+| 路徑 | 說明 |
+|---|---|
+| `/status` | 節點、相機、FPS與預覽狀態 JSON |
+| `/preview.jpg` | 控制台低負載 JPEG |
+| `/preview.mjpg` | 控制台 MJPEG |
+| `/obs.mjpg` | OBS 720p MJPEG |
+| `/obs` | OBS瀏覽器包裝頁 |
+| `/vel?pan=&tilt=&zoom=` | PTZ速度控制 |
+| `/stop` | 停止運鏡 |
+| `/preset/*` | 儲存、叫出、命名與刪除 Preset |
 
-<img width="890" height="464" alt="螢幕擷取畫面 2026-06-26 130740" src="https://github.com/user-attachments/assets/f09175b9-d679-4926-a7c5-a8dd82ba7b87" />
+完整設定請參閱 [OBS設定](docs/OBS_SETUP.md)、[架構](ARCHITECTURE.md)與[故障排除](docs/TROUBLESHOOTING.md)。
+
+## Windows管理工具
+
+| 檔案 | 用途 |
+|---|---|
+| `start-cameras.bat` | 啟動最多五台節點，選擇一般／NDI-only模式 |
+| `manage-firewall.bat` | 新增或移除LAN防火牆規則 |
+| `manage-autostart.bat` | 管理Node與Director登入自動啟動 |
+| `build-windows-exe.bat` | 建立三支Windows EXE |
+
+## 已知限制
+
+- UVC格式支援取決於相機韌體、USB控制器與DirectShow驅動。
+- MJPEG適合校內區網與低複雜度部署；對極低延遲正式製播，NDI或硬體影像介面仍較理想。
+- DJI內部ActiveTrack演算法未提供公開UVC控制介面；目前自動追蹤為本專案的軟體追蹤。
+- 導播介面目前顯示三個控制盤面，節點與OBS輸出最多五台。
+
+## 貢獻與安全
+
+提交程式前請閱讀 [CONTRIBUTING.md](CONTRIBUTING.md)。安全漏洞請依 [SECURITY.md](SECURITY.md) 私下回報，不要建立公開Issue。
+
+## 授權
+
+本專案使用 [MIT License](LICENSE)。
 
 ---
 
-<a name="中文說明"></a>
-# Pocket 3 PTZ 控制（USB-C / UVC）
-
-[English](#pocket-3-ptz-control-usb-c--uvc) | **繁體中文**
-
-把 DJI Osmo Pocket 3 透過一條 USB-C 線變成可遙控的 PTZ 攝影機。走的是 Windows DirectShow 的
-UVC 相機控制（也就是 OBS「相機控制」滑桿背後那條路），即時控制 pan / tilt / zoom，
-**而且不佔用影像串流**——可以一邊用 OBS 出畫面、一邊遙控雲台。藍牙（BLE/DUML）在 Pocket 3
-上實測無法控制雲台，因此本專案走 UVC 這條可行路線。
-
-## 一、安裝（每台機器一次）
-
-1. **裝 Python 3.12（64-bit）**，到 https://www.python.org/downloads/ 下載，安裝時勾「Add Python to PATH」。
-   （OBS 原生腳本那個選項只吃 3.12。）
-2. **裝套件：**
-   ```
-   pip install pygrabber comtypes keyboard
-   ```
-3. **接相機：** Pocket 3 用 USB-C 接電腦，相機螢幕點進 **Webcam 模式**。
-
-## 二、四種用法
-
-### A. OBS 控制面板（最推薦）
-1. 雙擊 `start-ptz.bat`，黑視窗顯示「PTZ 控制面板已啟動」並自動連線。**這個視窗要一直開著**（它是控制核心）。
-2. OBS：「停駐視窗 → 自訂瀏覽器停駐視窗」，新增一個，網址：
-   ```
-   http://127.0.0.1:8723/
-   ```
-3. OBS 裡會出現含類比搖桿、回正、Zoom、靈敏度的面板。
-
-### B. 獨立 GUI
-雙擊 `start-gui.bat`，或：
-```
-python uvc-gui.py
-```
-類比搖桿、即時數值、可自訂按鍵（按按鍵後再按下要綁定的鍵），右上有**語言切換（中文 / English）**。
-
-> **設定共用：** GUI 與 OBS 面板共用 `ptz-config.json`，靈敏度、回正角度、選的相機會沿用。
-> 自訂按鍵為 GUI 專屬（面板用畫面按鈕）。
-
-### C. 小鍵盤控制
-```
-python uvc-numpad.py
-```
-小鍵盤：`8/2/4/6`=tilt/pan、`5`=回正、`7/9`=zoom、`+/-`=速度、`/`=離開。
-
-### D. OBS 原生快捷鍵
-把 `pocket-ptz-obs.py` 用 OBS「工具 → 指令碼」載入（先在 Python 設定頁指到 Python 3.12 資料夾，
-下面要顯示 `Python 3.12.x`）。到「設定 → 快捷鍵」搜尋「Pocket」指定按鍵。
-
-## 三、疑難排解
-- **沒自動抓到相機 / 抓錯台：** 每個工具都能手動選——OBS 面板頂端有相機下拉選單＋⟳重新偵測；
-  GUI 有裝置下拉選單；`uvc-numpad.py` / `uvc-smooth.py` 會列出所有裝置請你輸入編號
-  （也可直接帶入：`python uvc-numpad.py 2`）；OBS 腳本的屬性裡也有裝置清單。選擇會存進 `ptz-config.json`。
-- **找不到相機 / 清單空的：** 確認在 Webcam 模式；確認 `pygrabber comtypes` 裝在你實際用的那個 Python。
-- **連到了但按了不動：** 跑 `python uvc-ptz2.py` 看 pan/tilt/zoom 支援與範圍。
-- **OBS 腳本顯示「無可用的屬性」：** Python 設定頁還是「未載入」——要指到含 `python.exe` 的資料夾，看到 `Python 3.12.x` 才對。
-- **回正 / 回正點：** 「回正點」是記住的位置，不是固定角度（這台相機的 UVC 數值不是真實角度）。
-  把鏡頭轉到想要的位置，按 **設為目前位置**（GUI）或 **設回正點**（OBS 面板），之後按 **回正** 就回到那裡。
-  存在 `ptz-config.json`，GUI 與 OBS 面板共用。
-
-## 四、限制
-- **ActiveTrack 無法透過 USB 觸發**（DJI 限制），請在相機螢幕點主體。
-- **變焦為數位變焦**，與相機本身一致。`
-
-## 檔案
-| 檔案 | 用途 |
-|------|------|
-| `ptz-server.py` | 背景控制程式＋網頁面板（給 OBS 自訂瀏覽器停駐視窗） |
-| `start-ptz.bat` | 雙擊啟動 `ptz-server.py` |
-| `uvc-gui.py` | 獨立 GUI（搖桿、可自訂按鍵、語言切換） |
-| `start-gui.bat` | 雙擊啟動 `uvc-gui.py` |
-| `uvc-numpad.py` | 小鍵盤控制 |
-| `uvc-smooth.py` | 方向鍵控制（平滑版） |
-| `uvc-ptz2.py` | 探測工具：列出支援的控制項與範圍 |
-| `pocket-ptz-obs.py` | OBS 原生快捷鍵腳本 |
-| `COMPANION.md` | Bitfocus Companion / Stream Deck 指南 |
-
-<img width="834" height="466" alt="螢幕擷取畫面 2026-06-26 130744" src="https://github.com/user-attachments/assets/49aff2ae-dec9-43d7-88c1-c22a05b807aa" />
-
+English: A Windows LAN controller for multiple DJI Osmo Pocket 3 compatible UVC/PTZ devices, featuring presets, scene macros, NDI/direct previews, shared OBS MJPEG output, and a three-channel director console.

@@ -5,18 +5,16 @@ Pocket 3 PTZ LAN｜精簡版使用說明
 --------------
 1. 解壓縮整個資料夾，不要只拿單一 BAT 或 EXE。
 2. 雙擊 build-windows-exe.bat，等待建立 EXE 資料夾。
-3. 右鍵 allow-firewall-lan.bat → 以系統管理員身分執行。
+3. 雙擊 manage-firewall.bat，選擇開放 LAN TCP 8723～8727。
 
 
 二、送畫面／相機電腦
 --------------------
-一般穩定模式：
-  Python：start-ptz.bat
-  EXE：start-five-cameras.bat
+執行 start-cameras.bat：
+  [1] 一般模式：Direct UVC 預覽與 OBS 輸出
+  [2] NDI-only：USB 負載最低
 
-正式轉播只使用 NDI（USB 負載最低）：
-  Python：start-ptz-ndi-only.bat
-  EXE：start-five-cameras-ndi-only.bat
+程式會優先使用已建置的 EXE；若 EXE 不存在則使用本機 Python。
 
 程式會自動偵測最多五台 DJI／Osmo／Pocket，跳過 OBS Virtual Camera，
 並依序分配：
@@ -30,23 +28,21 @@ Pocket 3 PTZ LAN｜精簡版使用說明
 背景執行，連線狀態、擷取模式、FPS 與 OBS 客戶數集中顯示在同一視窗。
 按 Ctrl+C 或關閉總控台會一起停止全部節點，不會留下多個黑窗或背景程序。
 
-若要登入 Windows 後自動啟動節點：install-node-autostart.bat
-若要取消：remove-node-autostart.bat
+登入 Windows 自動啟動：執行 manage-autostart.bat 統一設定。
 
 
 三、導播台電腦
 --------------
 1. 執行 EXE\Pocket3-Director.exe。
 2. CAMERA 欄位填入送畫面電腦顯示的網址，例如：
-     http://192.168.0.137:8723
-     http://192.168.0.137:8724
-     http://192.168.0.137:8725
+     http://192.168.1.100:8723
+     http://192.168.1.100:8724
+     http://192.168.1.100:8725
 3. 每個盤面不可填相同的 IP 與 Port。
 4. NDI-only 模式必須在 VIDEO SOURCE 選擇 NDI 訊號；不能選 DIRECT UVC LAN。
 5. 控制視窗只會開一次，關閉後不會自動重啟。
 
-導播台登入自動啟動：install-director-autostart.bat
-取消並停止舊背景程式：remove-director-autostart.bat
+導播台登入自動啟動或取消：執行 manage-autostart.bat。
 
 
 四、三台以上訊號中斷
@@ -99,7 +95,8 @@ multi-ptz-launcher.py              自動偵測並啟動最多五台相機
 director-console.py                導播台本機服務
 director-panel.html                Blackmagic 風格控制介面
 ndi_preview.py                     NDI／Direct UVC 預覽與軟體追蹤
-allow-firewall-lan.bat             開放區網 TCP 8723～8727
-remove-firewall-rule.bat           移除防火牆規則
+start-cameras.bat                  一般／NDI-only 啟動選單
+manage-firewall.bat                新增／移除防火牆規則
+manage-autostart.bat               Node／Director 自動啟動管理
 
 設定檔會在第一次啟動後自動建立，不需要手動複製。
