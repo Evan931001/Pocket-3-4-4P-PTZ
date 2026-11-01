@@ -51,7 +51,8 @@ def _early_cli_value(flag, default):
 
 if getattr(sys, "frozen", False) and (sys.stdout is None or sys.stderr is None):
     try:
-        _log_port = _early_cli_value("--port", str(PORT if "PORT" in globals() else 8723))
+        # PORT is declared later; use the documented default during early EXE setup.
+        _log_port = _early_cli_value("--port", "8723")
         _log = open(os.path.join(APP_DIR, f"Pocket3-PTZ-Node-{_log_port}.log"), "a", encoding="utf-8", buffering=1)
         if sys.stdout is None:
             sys.stdout = _log
