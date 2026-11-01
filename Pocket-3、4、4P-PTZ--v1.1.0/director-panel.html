@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>CORSA PTZ Director Console</title>
+<style>
+:root{color-scheme:dark;--red:#e54037;--amber:#ffbd39;--green:#45c781;--cyan:#8de7ff;--edge:#08090a}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:#090b0c;color:#e7eaed;font-family:"Segoe UI","Microsoft JhengHei",sans-serif}
+body{padding:14px;background:radial-gradient(circle at 50% -20%,#393d40,#151719 43%,#08090a 100%);user-select:none;-webkit-user-select:none}
+button,input,select{font:inherit}
+.console{max-width:1500px;margin:auto;padding:16px 18px 22px;border:1px solid #44494c;border-radius:17px 17px 28px 28px;
+  background:linear-gradient(150deg,#393c3f,#202326 35%,#151719);box-shadow:0 26px 75px #000d,inset 0 1px #ffffff2b,inset 0 -3px #050607}
+.head{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:14px}
+.brand{font-weight:800;letter-spacing:.16em;font-size:18px}.brand b{color:var(--red)}
+.sub{font-size:9px;letter-spacing:.18em;color:#858d92;margin-top:3px}.head-actions{display:flex;align-items:center;gap:8px}
+.master-status{font:10px Consolas,monospace;color:#7f898f}.master-stop{padding:10px 16px!important;background:linear-gradient(#9f3b34,#541916)!important;color:white!important}.app-exit{display:none;padding:10px 12px!important}
+.channels{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.channel{min-width:0;padding:12px;border:1px solid #08090a;border-radius:9px;background:linear-gradient(150deg,#2b2e31,#17191b);
+  box-shadow:inset 0 1px #ffffff1d,0 6px 14px #0009;position:relative}
+.channel.selected{border-color:#d29b32;box-shadow:inset 0 1px #ffffff25,0 0 0 2px #ffbd3944,0 8px 20px #000b}.channel.selected .ch-title{color:#ffd77a}.channel.selected .ch-title:after{content:" · KEYBOARD ACTIVE";font-size:8px;color:var(--amber)}
+.channel::before{content:"";position:absolute;inset:0;pointer-events:none;opacity:.08;background:repeating-linear-gradient(90deg,#fff0 0,#fff 1px,#fff0 2px,#fff0 5px)}
+.ch-head,.node-row,.screen,.control-grid,.preset-section{position:relative}
+.ch-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}.ch-title{font-size:13px;font-weight:800;letter-spacing:.13em}
+.link-state{display:flex;align-items:center;gap:6px;font-size:9px;color:#8e969b;letter-spacing:.1em}.lamp{width:8px;height:8px;border-radius:50%;background:#652723;box-shadow:inset 0 0 3px #000}
+.channel.online .lamp{background:var(--green);box-shadow:0 0 9px #45c781aa}.channel.online .link-state{color:#b7f5d3}
+.node-row{display:grid;grid-template-columns:1fr 58px;gap:6px;margin-bottom:8px}.node-row input,.device-row select{min-width:0;width:100%;background:#141719;color:#cfd5d9;border:1px solid #3d4347;border-radius:4px;padding:7px 8px;font-size:10px}
+.screen{padding:9px 10px;margin-bottom:8px;border:1px solid #263a40;border-radius:4px;background:linear-gradient(#0b1b20,#061014);box-shadow:inset 0 0 16px #000b}
+.screen-name{height:18px;color:#acecff;font:13px Consolas,monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.screen-line{display:flex;justify-content:space-between;gap:7px;margin-top:5px;color:#5e8b97;font:9px Consolas,monospace}
+.device-row{position:relative;display:grid;grid-template-columns:1fr 62px;gap:6px;margin-bottom:10px}
+.hw{border:1px solid #08090a;border-radius:4px;color:#d0d4d7;background:linear-gradient(#494d50,#26292b 52%,#181a1c);box-shadow:inset 0 1px #ffffff2c,0 3px 5px #0009;
+  padding:7px 8px;min-height:34px;font-size:9px;font-weight:750;letter-spacing:.05em;cursor:pointer;touch-action:none;text-shadow:0 1px #000}
+.hw:hover{filter:brightness(1.12)}.hw:active,.hw.active{transform:translateY(2px);background:#202325;box-shadow:inset 0 2px 5px #000}
+.hw.red{background:linear-gradient(#87362f,#4c1815);color:#ffd7d3}.hw.red.active{background:var(--red);box-shadow:0 0 12px #e5403799}
+.hw.amber.active{background:#94671a}.hw.danger.active{background:#b52e28}.control-grid{display:grid;grid-template-columns:1fr 106px;gap:10px;align-items:center}
+.joy-well{width:min(220px,100%);aspect-ratio:1;margin:auto;padding:19px;border:2px solid #070809;border-radius:50%;background:radial-gradient(circle,#24282a 0 42%,#101214 72%,#050607 100%);box-shadow:inset 0 8px 18px #000,0 2px #555}
+.joy{height:100%;position:relative;border:1px solid #3b4043;border-radius:50%;touch-action:none;background:radial-gradient(circle,#262a2c,#15181a 62%,#0a0c0d);box-shadow:inset 0 0 24px #000c}
+.joy:before,.joy:after{content:"";position:absolute;background:#59606455}.joy:before{left:50%;top:8%;bottom:8%;width:1px}.joy:after{top:50%;left:8%;right:8%;height:1px}
+.joy-ring{position:absolute;inset:18%;border:1px dashed #62696d66;border-radius:50%}.stick{position:absolute;left:50%;top:50%;width:62px;height:62px;border-radius:50%;pointer-events:none;
+  transform:translate(-50%,-50%);background:radial-gradient(circle at 38% 27%,#74797c,#303438 31%,#101214 72%);border:2px solid #08090a;box-shadow:0 10px 13px #000c,inset 0 2px #ffffff4a}
+.side-controls{display:grid;gap:7px}.zoom{height:112px;display:grid;grid-template-rows:1fr 1fr;border:2px solid #070809;border-radius:8px;overflow:hidden;background:#111}
+.zoom button{border:0;color:#e2e5e7;background:linear-gradient(#4b4f52,#232628);font-size:9px;font-weight:800;cursor:pointer;touch-action:none}.zoom button:first-child{border-bottom:1px solid #090a0b}.zoom button:active{background:#181a1c}.zoom strong{display:block;font-size:18px}
+.home-row{display:grid;grid-template-columns:1fr 1fr;gap:5px}.stop-wide{grid-column:1/-1}.speed{padding:7px;background:#101214;border:1px solid #34393c;border-radius:5px}.speed-label{display:flex;justify-content:space-between;font:9px Consolas,monospace;color:#8c9499;margin-bottom:5px}
+input[type=range]{width:100%;accent-color:var(--amber)}
+.preset-section{margin-top:11px;padding-top:10px;border-top:1px solid #3b3f42}.preset-tools{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-bottom:7px}
+.motion-settings{display:grid;grid-template-columns:92px 1fr;gap:6px;margin-bottom:7px}.motion-settings label{display:grid;gap:3px;color:#7f898f;font:8px Consolas,monospace;letter-spacing:.08em}.motion-settings input,.motion-settings select{width:100%;height:29px;padding:4px 6px;border:1px solid #3d4347;border-radius:4px;background:#111416;color:#dce1e4;font:10px "Segoe UI",sans-serif}.motion-settings input{text-align:center}
+.bank-row{display:grid;grid-template-columns:32px repeat(4,1fr);gap:5px;align-items:center;margin-bottom:7px}.bank-label{font-size:8px;color:#737b80;letter-spacing:.1em}.bank.active{color:#fff;background:#7b581b}
+.preset-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:5px}.preset{height:47px;padding:4px 3px;overflow:hidden}.preset b{display:block;font-size:13px;color:#f0f2f3}.preset span{display:block;font-size:8px;color:#81898e;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:3px}
+.preset.saved{background:linear-gradient(#87362f,#4c1815);color:#ffe7e4}.preset.saved b{color:#fff}.preset.saved span{color:#ffc5bf}
+.preset.moving{background:linear-gradient(#2f9a64,#175237);outline:1px solid #6fffb0;box-shadow:0 0 13px #45c78188}.preset.moving b,.preset.moving span{color:#eafff2}
+.preview-section{position:relative;margin-top:11px;padding-top:10px;border-top:1px solid #3b3f42}.preview-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px}.preview-title{font-size:9px;font-weight:800;letter-spacing:.12em}.preview-state{font:8px Consolas,monospace;color:#788288;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.preview-tools{display:grid;grid-template-columns:minmax(0,1fr) 62px 72px;gap:5px;margin-bottom:6px}.preview-tools select,.track-tools select{min-width:0;width:100%;height:30px;padding:4px 6px;border:1px solid #3d4347;border-radius:4px;background:#111416;color:#dce1e4;font-size:9px}.preview-frame{position:relative;aspect-ratio:16/9;overflow:hidden;border:1px solid #263a40;border-radius:5px;background:#06090a}.preview-frame img{display:block;width:100%;height:100%;object-fit:contain}.preview-frame.disabled:after{content:"請用 Pocket3-Director.exe 開啟預覽";position:absolute;inset:0;display:grid;place-items:center;padding:12px;text-align:center;color:#7e898e;font:10px Consolas,monospace;background:#090c0ee8}.track-tools{display:grid;grid-template-columns:1fr 74px;gap:5px;margin-top:6px}.tracking-on .preview-state{color:var(--green)}.tracking-on .preview-frame{border-color:#31875a;box-shadow:0 0 10px #45c78144}.track-tip{margin-top:4px;color:#626d72;font:8px Consolas,monospace;text-align:center}
+.mode-tip{height:14px;margin-top:6px;text-align:center;font-size:8px;color:#6f777c}.footer{display:flex;justify-content:space-between;gap:12px;margin-top:13px;color:#60676b;font-size:9px;letter-spacing:.1em}
+.macro-section{margin-top:14px;padding:13px;border:1px solid #08090a;border-radius:9px;background:linear-gradient(150deg,#2b2e31,#17191b);box-shadow:inset 0 1px #ffffff1d,0 6px 14px #0009}
+.macro-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:9px}.macro-title{font-size:13px;font-weight:800;letter-spacing:.13em}.macro-status{font:9px Consolas,monospace;color:#7f898f}
+.macro-tools{display:grid;grid-template-columns:repeat(3,110px);gap:6px;margin-bottom:8px}.macro-grid{display:grid;grid-template-columns:repeat(10,minmax(0,1fr));gap:6px}.macro{height:49px;padding:4px;overflow:hidden}.macro b{display:block;font-size:13px}.macro span{display:block;margin-top:3px;font-size:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#858d92}
+.macro.saved{background:linear-gradient(#87362f,#4c1815);color:#ffe7e4}.macro.saved span{color:#ffc5bf}.macro.moving{background:linear-gradient(#2f9a64,#175237);outline:1px solid #6fffb0;box-shadow:0 0 13px #45c78188}.macro.moving span{color:#eafff2}
+@media(max-width:1050px){.channels{grid-template-columns:1fr}.channel{display:grid;grid-template-columns:1fr 1fr;gap:0 14px}.ch-head,.node-row,.screen,.device-row,.preview-section{grid-column:1/-1}.preset-section{margin-top:0;padding-top:0;border-top:0}.control-grid{align-self:start}.macro-grid{grid-template-columns:repeat(5,1fr)}}
+@media(max-width:650px){body{padding:7px}.console{padding:12px}.head{align-items:flex-start}.brand{font-size:13px}.sub,.master-status{display:none}.channels{grid-template-columns:1fr}.channel{display:block}.preset-section{margin-top:11px;padding-top:10px;border-top:1px solid #3b3f42}.control-grid{grid-template-columns:1fr 96px}.footer{display:block;line-height:1.8}}
+</style>
+</head>
+<body>
+<main class="console">
+  <header class="head">
+    <div><div class="brand"><b>●</b> CORSA PTZ DIRECTOR</div><div class="sub">3-CHANNEL POCKET 3 · LAN CONTROL SURFACE</div></div>
+    <div class="head-actions"><span class="master-status" id="masterStatus">0 / 3 ONLINE</span><button class="hw master-stop" id="stopAll">STOP ALL</button><button class="hw app-exit" id="exitApp">EXIT APP</button></div>
+  </header>
+  <section class="channels" id="channels"></section>
+  <section class="macro-section">
+    <div class="macro-head"><div class="macro-title">3-CAMERA SCENE MACROS</div><div class="macro-status" id="macroStatus">一次記錄並移動三台機位</div></div>
+    <div class="motion-settings"><label>完成秒數<input type="number" id="macroDuration" min="0.5" max="60" step="0.5" value="6"></label><label>三機動態曲線<select id="macroCurve"><option value="linear">Linear · 等速</option><option value="ease_in">Ease In · 漸加速</option><option value="ease_out">Ease Out · 漸減速</option><option value="ease_in_out">Ease In-Out · 柔順</option><option value="s_curve" selected>Cinematic S-Curve · 電影感</option></select></label></div>
+    <div class="macro-tools"><button class="hw red" data-macro-mode="store">STORE MACRO</button><button class="hw amber" data-macro-mode="rename">RENAME</button><button class="hw danger" data-macro-mode="delete">DELETE</button></div>
+    <div class="macro-grid" id="macroGrid"></div>
+    <div class="mode-tip" id="macroTip">按巨集鍵，三台 Pocket 3 同時移動</div>
+  </section>
+  <footer class="footer"><span>點盤面或按 1／2／3 選機位 · 方向鍵運鏡 · ＋／－變焦</span><span>SPACE 停目前機位 · SHIFT＋SPACE 全停</span></footer>
+</main>
+
+<template id="channelTemplate">
+<article class="channel">
+  <div class="ch-head"><div class="ch-title">CAMERA <span data-role="number"></span></div><div class="link-state"><span class="lamp"></span><span data-role="link">OFFLINE</span></div></div>
+  <div class="node-row"><input data-role="endpoint" placeholder="送畫面電腦 IP，例如 120.108.151.114:8723"><button class="hw" data-action="apply-node">CONNECT</button></div>
+  <div class="screen"><div class="screen-name" data-role="camera-name">NO NODE CONFIGURED</div><div class="screen-line"><span data-role="position">P — · T — · Z —</span><span data-role="speed-readout">30%</span></div></div>
+  <div class="device-row"><select data-role="devices"><option>NO CAMERA</option></select><button class="hw" data-action="rescan">RESCAN</button></div>
+  <div class="control-grid">
+    <div class="joy-well"><div class="joy" data-role="joy"><div class="joy-ring"></div><div class="stick" data-role="stick"></div></div></div>
+    <div class="side-controls">
+      <div class="zoom"><button data-zoom="1"><strong>＋</strong>TELE</button><button data-zoom="-1">WIDE<strong>−</strong></button></div>
+      <div class="home-row"><button class="hw" data-action="home">HOME</button><button class="hw" data-action="set-home">SET HOME</button><button class="hw red stop-wide" data-action="stop">STOP</button></div>
+      <div class="speed"><div class="speed-label"><span>SPEED</span><span data-role="speed-value">30%</span></div><input type="range" data-role="speed" min="5" max="100" value="30"></div>
+    </div>
+  </div>
+  <div class="preset-section">
+    <div class="motion-settings"><label>完成秒數<input type="number" data-role="move-duration" min="0.5" max="60" step="0.5" value="4"></label><label>動態曲線<select data-role="move-curve"><option value="linear">Linear · 等速</option><option value="ease_in">Ease In · 漸加速</option><option value="ease_out">Ease Out · 漸減速</option><option value="ease_in_out" selected>Ease In-Out · 柔順</option><option value="s_curve">Cinematic S-Curve · 電影感</option></select></label></div>
+    <div class="preset-tools"><button class="hw red" data-mode="store">STORE</button><button class="hw amber" data-mode="rename">RENAME</button><button class="hw danger" data-mode="delete">DELETE</button></div>
+    <div class="bank-row"><span class="bank-label">BANK</span><button class="hw bank active" data-bank="0">1–5</button><button class="hw bank" data-bank="1">6–10</button><button class="hw bank" data-bank="2">11–15</button><button class="hw bank" data-bank="3">16–20</button></div>
+    <div class="preset-grid" data-role="presets"></div><div class="mode-tip" data-role="mode-tip">按機位鍵叫出 Preset</div>
+  </div>
+  <div class="preview-section">
+    <div class="preview-head"><span class="preview-title">VIDEO MONITOR / AUTO TRACK</span><span class="preview-state" data-role="ndi-state">WAITING</span></div>
+    <div class="preview-tools"><select data-role="ndi-source"><option value="">SELECT VIDEO SOURCE</option></select><button class="hw" data-action="ndi-refresh">REFRESH</button><button class="hw red" data-action="obs-priority">OBS MODE</button></div>
+    <div class="preview-frame" data-role="preview-frame"><img data-role="ndi-preview" alt="Camera Preview"></div>
+    <div class="track-tools"><select data-role="track-mode"><option value="off">TRACK OFF</option><option value="click">CLICK TARGET</option><option value="face">AUTO FACE</option><option value="person">AUTO PERSON</option></select><button class="hw red" data-action="track-stop">STOP</button></div>
+    <div class="track-tip">點選畫面＝鎖定目標；手動搖桿、Preset、巨集會自動停止追蹤</div>
+  </div>
+</article>
+</template>
+
+<script>
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const normalizeBase=value=>{let v=(value||'').trim().replace(/\/+$/,'');if(v&&!/^https?:\/\//i.test(v))v='http://'+v;return v};
+const directorApp=location.hostname==='127.0.0.1'&&location.port==='18723';
+let macroConsole=null;
+let activeChannelIndex=0;
+
+class PTZChannel{
+  constructor(index){
+    this.index=index;this.mode='recall';this.bank=0;this.presets=[];this.recalled=0;this.pollBusy=false;this.online=false;this.moving=false;this.position=null;
+    const fragment=document.getElementById('channelTemplate').content.cloneNode(true);this.el=fragment.querySelector('.channel');
+    this.el.querySelector('[data-role="number"]').textContent=index+1;document.getElementById('channels').appendChild(fragment);
+    this.el=document.getElementById('channels').lastElementChild;
+    this.q=s=>this.el.querySelector(s);this.qa=s=>[...this.el.querySelectorAll(s)];
+    this.el.addEventListener('pointerdown',()=>setActiveChannel(this.index));
+    const saved=localStorage.getItem(`ptz-node-${index+1}`);this.base=normalizeBase(saved||(index===0&&!directorApp?location.origin:''));
+    this.q('[data-role="endpoint"]').value=this.base;const duration=this.q('[data-role="move-duration"]'),curve=this.q('[data-role="move-curve"]');duration.value=localStorage.getItem(`ptz-duration-${index+1}`)||'4';curve.value=localStorage.getItem(`ptz-curve-${index+1}`)||'ease_in_out';duration.onchange=()=>localStorage.setItem(`ptz-duration-${index+1}`,String(this.motionSettings().duration));curve.onchange=()=>localStorage.setItem(`ptz-curve-${index+1}`,curve.value);
+    this.bind();this.renderPresets();this.setupPreview();this.poll();this.timer=setInterval(()=>this.poll(),850+index*90);
+  }
+  api(path){if(!this.base)return Promise.reject(new Error('no endpoint'));return fetch(this.base+path,{cache:'no-store'});}
+  directorPost(path,body){return fetch(path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),cache:'no-store'}).then(async response=>{const data=await response.json();if(!response.ok||data.ok===false)throw new Error(data.error||'request failed');return data;});}
+  bind(){
+    this.q('[data-action="apply-node"]').onclick=()=>{const candidate=normalizeBase(this.q('[data-role="endpoint"]').value),duplicate=channels.find(channel=>channel!==this&&channel.base&&channel.base===candidate);
+      if(candidate&&duplicate){this.setOnline(false,'DUPLICATE NODE');this.q('[data-role="camera-name"]').textContent=`CAMERA ${duplicate.index+1} 已使用此節點 · 第二顆請改用 :8724`;alert(`這個節點已被 CAMERA ${duplicate.index+1} 使用。\n\n同一台電腦的第二顆 DJI 請連線到不同埠，例如：\nCAMERA 1 → http://IP:8723\nCAMERA 2 → http://IP:8724`);return;}
+      this.base=candidate;this.q('[data-role="endpoint"]').value=this.base;localStorage.setItem(`ptz-node-${this.index+1}`,this.base);this.setOnline(false,'CONNECTING');this.poll();this.refreshNDI(true);};
+    this.q('[data-action="rescan"]').onclick=()=>this.api('/rescan').then(()=>setTimeout(()=>this.poll(),250)).catch(()=>{});
+    this.q('[data-action="home"]').onclick=()=>{this.disableTracking();this.api('/center').catch(()=>{})};this.q('[data-action="set-home"]').onclick=()=>this.api('/sethome').catch(()=>{});this.q('[data-action="stop"]').onclick=()=>this.stop();
+    const device=this.q('[data-role="devices"]');device.onchange=()=>this.api(`/connect?index=${device.value}`).catch(()=>{});
+    const speed=this.q('[data-role="speed"]');speed.oninput=()=>{this.q('[data-role="speed-value"]').textContent=speed.value+'%';this.api(`/speed?v=${speed.value/100}`).catch(()=>{});};
+    this.qa('[data-zoom]').forEach(button=>{const v=button.dataset.zoom;button.addEventListener('pointerdown',e=>{e.preventDefault();this.disableTracking();button.classList.add('active');this.api(`/vel?zoom=${v}`).catch(()=>{})});
+      ['pointerup','pointerleave','pointercancel'].forEach(ev=>button.addEventListener(ev,()=>{button.classList.remove('active');this.api('/vel?zoom=0').catch(()=>{})}));});
+    this.qa('[data-mode]').forEach(button=>button.onclick=()=>this.setMode(button.dataset.mode));
+    this.qa('[data-bank]').forEach(button=>button.onclick=()=>{this.bank=Number(button.dataset.bank);this.qa('[data-bank]').forEach(b=>b.classList.toggle('active',b===button));this.renderPresets();});
+    this.bindJoystick();
+  }
+  bindJoystick(){const joy=this.q('[data-role="joy"]'),stick=this.q('[data-role="stick"]');let active=false,last=0,pan=0,tilt=0,lockedAxis=null;
+    const place=(dx,dy)=>stick.style.transform=`translate(calc(-50% + ${dx}px),calc(-50% + ${dy}px))`;
+    const update=e=>{const r=joy.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2;let dx=e.clientX-cx,dy=e.clientY-cy,R=r.width/2-37,d=Math.hypot(dx,dy);if(d>R){dx*=R/d;dy*=R/d;}
+      const rawPan=clamp(dx/R,-1,1),rawTilt=clamp(-dy/R,-1,1);if(!lockedAxis&&Math.hypot(rawPan,rawTilt)>.07)lockedAxis=Math.abs(rawPan)>=Math.abs(rawTilt)?'pan':'tilt';
+      if(lockedAxis==='pan'){pan=rawPan;tilt=0;dy=0;}else if(lockedAxis==='tilt'){pan=0;tilt=rawTilt;dx=0;}else{pan=tilt=0;dx=dy=0;}place(dx,dy);
+      const now=performance.now();if(now-last>48){last=now;this.api(`/vel?pan=${pan.toFixed(3)}&tilt=${tilt.toFixed(3)}`).catch(()=>{});}};
+    const stop=()=>{if(!active)return;active=false;lockedAxis=null;pan=tilt=0;place(0,0);this.api('/vel?pan=0&tilt=0').catch(()=>{});};
+    joy.addEventListener('pointerdown',e=>{this.disableTracking();active=true;lockedAxis=null;joy.setPointerCapture(e.pointerId);update(e)});joy.addEventListener('pointermove',e=>{if(active){e.preventDefault();update(e)}});
+    ['pointerup','pointercancel'].forEach(ev=>joy.addEventListener(ev,stop));this.stopJoystick=stop;
+  }
+  stop(){if(this.stopJoystick)this.stopJoystick();this.disableTracking();this.moving=false;this.api('/stop').catch(()=>{});this.renderPresets();}
+  keyboardMove(pan,tilt){this.disableTracking();this.api(`/vel?pan=${pan}&tilt=${tilt}`).catch(()=>{});}
+  keyboardZoom(value){this.disableTracking();this.api(`/vel?zoom=${value}`).catch(()=>{});}
+  setMode(mode){this.mode=this.mode===mode?'recall':mode;this.qa('[data-mode]').forEach(b=>b.classList.toggle('active',b.dataset.mode===this.mode));
+    const labels={recall:'按機位鍵叫出 Preset',store:'選一格儲存位置、秒數與動態曲線',rename:'選一格重新命名',delete:'選一格刪除 Preset'};this.q('[data-role="mode-tip"]').textContent=labels[this.mode];}
+  motionSettings(){const input=this.q('[data-role="move-duration"]'),curve=this.q('[data-role="move-curve"]');const duration=clamp(Number(input.value)||4,.5,60);input.value=duration;return{duration,curve:curve.value};}
+  presetInfo(n){return this.presets.find(p=>p.n===n)||{n,saved:false,name:`Preset ${n}`,duration:4,curve:'ease_in_out'};}
+  async usePreset(n){const item=this.presetInfo(n);
+    if(this.mode==='store'){const name=prompt(`儲存機位 ${n} 的名稱`,item.saved?item.name:`機位 ${n}`);if(name===null)return;const m=this.motionSettings();await this.api(`/preset/save?n=${n}&name=${encodeURIComponent(name.trim()||`機位 ${n}`)}&duration=${m.duration}&curve=${encodeURIComponent(m.curve)}`).catch(()=>{});}
+    else if(this.mode==='rename'){if(!item.saved)return;const name=prompt(`重新命名機位 ${n}`,item.name);if(name===null||!name.trim())return;await this.api(`/preset/rename?n=${n}&name=${encodeURIComponent(name.trim())}`).catch(()=>{});}
+    else if(this.mode==='delete'){if(!item.saved||!confirm(`刪除「${item.name}」？`))return;await this.api(`/preset/delete?n=${n}`).catch(()=>{});}
+    else{if(!item.saved)return;this.disableTracking();this.recalled=n;this.moving=true;this.renderPresets();const duration=clamp(Number(item.duration)||4,.5,60),curve=item.curve||'ease_in_out';await this.api(`/preset/recall?n=${n}&duration=${duration}&curve=${encodeURIComponent(curve)}`).catch(()=>{});}
+    this.setMode('recall');setTimeout(()=>this.poll(),180);this.renderPresets();
+  }
+  renderPresets(){const root=this.q('[data-role="presets"]');root.innerHTML='';for(let offset=1;offset<=5;offset++){const n=this.bank*5+offset,item=this.presetInfo(n),button=document.createElement('button');
+      button.className='hw preset'+(item.saved?' saved':'')+(this.recalled===n&&this.moving?' moving':'');button.innerHTML=`<b>${n}</b><span>${item.saved?`${this.escape(item.name)} · ${Number(item.duration||4).toFixed(1)}s`:'EMPTY'}</span>`;button.onclick=()=>this.usePreset(n);root.appendChild(button);}}
+  escape(value){const div=document.createElement('div');div.textContent=value;return div.innerHTML;}
+  setupPreview(){const frame=this.q('[data-role="preview-frame"]'),image=this.q('[data-role="ndi-preview"]'),source=this.q('[data-role="ndi-source"]'),mode=this.q('[data-role="track-mode"]');
+    if(!directorApp){frame.classList.add('disabled');source.disabled=true;mode.disabled=true;this.q('[data-action="ndi-refresh"]').disabled=true;this.q('[data-action="obs-priority"]').disabled=true;this.q('[data-action="track-stop"]').disabled=true;this.q('[data-role="ndi-state"]').textContent='DIRECTOR EXE ONLY';return;}
+    image.src=`/ndi/mjpeg?camera=${this.index}&v=1`;source.onchange=()=>{localStorage.setItem(`ptz-ndi-source-${this.index+1}`,source.value);this.applyNDISource();};
+    this.q('[data-action="ndi-refresh"]').onclick=()=>source.value?this.applyNDISource():this.refreshNDI(true);mode.onchange=()=>this.setTracking(mode.value);this.q('[data-action="track-stop"]').onclick=()=>this.disableTracking();
+    this.q('[data-action="obs-priority"]').onclick=()=>this.toggleOBSMode();
+    image.onclick=e=>{if(!source.value)return;const r=image.getBoundingClientRect(),x=clamp((e.clientX-r.left)/r.width,0,1),y=clamp((e.clientY-r.top)/r.height,0,1);mode.value='click';this.setTracking('click').then(()=>this.directorPost('/ndi/target',{camera:this.index,x,y})).catch(error=>this.showNDIError(error));};
+    this.refreshNDI(false);this.ndiTimer=setInterval(()=>this.refreshNDI(false),2500+this.index*180);
+  }
+  async refreshNDI(force){if(!directorApp)return;try{const response=await fetch('/ndi/status',{cache:'no-store'}),data=await response.json();if(!data.available)throw new Error(data.error||'Video engine unavailable');const select=this.q('[data-role="ndi-source"]'),stored=localStorage.getItem(`ptz-ndi-source-${this.index+1}`)||select.value,ndiSources=Array.isArray(data.sources)?data.sources:[],options=this.base?['__LAN_UVC__',...ndiSources]:ndiSources,saved=options.includes(stored)?stored:(this.base?'__LAN_UVC__':'');
+      if(force||select.dataset.key!==options.join('|')){select.dataset.key=options.join('|');select.innerHTML='<option value="">SELECT VIDEO SOURCE</option>';options.forEach(name=>{const option=document.createElement('option');option.value=name;option.textContent=name==='__LAN_UVC__'?'DIRECT UVC LAN · 免 NDI':`NDI · ${name}`;select.appendChild(option);});if(saved)select.value=saved;}
+      const info=data.channels?.[this.index]||{},state=this.q('[data-role="ndi-state"]');state.textContent=info.status||`${options.length} SOURCE(S)`;this.el.classList.toggle('tracking-on',info.mode&&info.mode!=='off');if(document.activeElement!==this.q('[data-role="track-mode"]'))this.q('[data-role="track-mode"]').value=info.mode||'off';
+      if(saved&&info.source!==saved){select.value=saved;localStorage.setItem(`ptz-ndi-source-${this.index+1}`,saved);this.applyNDISource();}
+    }catch(error){this.showNDIError(error);}}
+  async applyNDISource(){if(!directorApp)return;const source=this.q('[data-role="ndi-source"]').value;this.q('[data-role="ndi-state"]').textContent=source?'CONNECTING':'NO SOURCE';try{if(source==='__LAN_UVC__'&&this.base)await fetch(this.base+'/preview/control?enabled=1',{cache:'no-store'});await this.directorPost('/ndi/select',{camera:this.index,source,endpoint:this.base});await this.refreshNDI(false);}catch(error){this.showNDIError(error);}}
+  async toggleOBSMode(){if(!this.base)return;const button=this.q('[data-action="obs-priority"]'),enable=button.dataset.released!=='1';try{if(enable){this.disableTracking();this.q('[data-role="ndi-source"]').value='';localStorage.removeItem(`ptz-ndi-source-${this.index+1}`);await this.directorPost('/ndi/select',{camera:this.index,source:'',endpoint:this.base});await fetch(this.base+'/preview/control?enabled=0',{cache:'no-store'});}else await fetch(this.base+'/preview/control?enabled=1',{cache:'no-store'});setTimeout(()=>this.poll(),150);}catch(error){this.showNDIError(error);}}
+  setTracking(mode){if(!directorApp)return Promise.resolve();this.q('[data-role="track-mode"]').value=mode;this.el.classList.toggle('tracking-on',mode!=='off');return this.directorPost('/ndi/tracking',{camera:this.index,mode}).catch(error=>this.showNDIError(error));}
+  disableTracking(){if(!directorApp)return;const mode=this.q('[data-role="track-mode"]');if(!mode||mode.value==='off')return;mode.value='off';this.el.classList.remove('tracking-on');this.directorPost('/ndi/tracking',{camera:this.index,mode:'off'}).catch(()=>{});}
+  showNDIError(error){this.q('[data-role="ndi-state"]').textContent=String(error?.message||error||'NDI ERROR').slice(0,52);}
+  setOnline(ok,label){this.online=ok;this.el.classList.toggle('online',ok);this.q('[data-role="link"]').textContent=label;updateMaster();}
+  updateDevices(list,selected,fixed){const select=this.q('[data-role="devices"]'),key=(list||[]).join('|');if(select.dataset.key!==key){select.dataset.key=key;select.innerHTML='';
+      if(!list||!list.length){const o=document.createElement('option');o.textContent='NO CAMERA';select.appendChild(o);}else list.forEach((name,i)=>{const o=document.createElement('option');o.value=i;o.textContent=`CAM ${i+1} · ${name}`;select.appendChild(o);});}
+    if(document.activeElement!==select&&selected!=null)select.value=selected;select.disabled=!!fixed;this.q('[data-action="rescan"]').disabled=false;}
+  async poll(){if(this.pollBusy||!this.base){if(!this.base)this.setOnline(false,'NO NODE');return;}const duplicate=channels.find(channel=>channel!==this&&channel.base&&channel.base===this.base);if(duplicate){this.setOnline(false,'DUPLICATE NODE');this.q('[data-role="camera-name"]').textContent=`SAME AS CAMERA ${duplicate.index+1} · USE :8724`;return;}this.pollBusy=true;const abort=new AbortController(),timeout=setTimeout(()=>abort.abort(),1000);
+    try{const response=await fetch(this.base+'/status',{cache:'no-store',signal:abort.signal});if(!response.ok)throw new Error();const data=await response.json();
+      this.setOnline(!!data.connected,data.connected?'ONLINE':'NO CAMERA');this.q('[data-role="camera-name"]').textContent=(data.connected?`${data.node_label?data.node_label+' · ':''}${data.connected} · PORT ${data.node_port||'—'}`:'NODE ONLINE · CAMERA OFFLINE');this.moving=!!data.moving;this.position=data.pos||null;
+      this.q('[data-role="position"]').textContent=`P ${data.pos?.pan??'—'} · T ${data.pos?.tilt??'—'} · Z ${data.pos?.zoom??'—'}`;const speed=Math.round((data.speed||.3)*100);
+      this.q('[data-role="speed-readout"]').textContent=speed+'%';const slider=this.q('[data-role="speed"]');if(document.activeElement!==slider)slider.value=speed;this.q('[data-role="speed-value"]').textContent=speed+'%';
+      const obsButton=this.q('[data-action="obs-priority"]'),released=data.preview_enabled===false;obsButton.dataset.released=released?'1':'0';obsButton.textContent=released?'UVC MODE':'OBS MODE';obsButton.classList.toggle('active',released);
+      this.updateDevices(data.devices,data.device_index,data.fixed_device_index!=null||!!data.fixed_device_match);this.presets=Array.isArray(data.presets)?data.presets:[];this.renderPresets();if(macroConsole)macroConsole.updateMoving();
+    }catch(e){this.setOnline(false,'OFFLINE');this.moving=false;this.q('[data-role="camera-name"]').textContent='NODE UNREACHABLE';if(macroConsole)macroConsole.updateMoving();}finally{clearTimeout(timeout);this.pollBusy=false;}}
+}
+
+const channels=[];[0,1,2].forEach(i=>channels.push(new PTZChannel(i)));
+function setActiveChannel(index){activeChannelIndex=clamp(Number(index)||0,0,2);channels.forEach((channel,i)=>channel.el.classList.toggle('selected',i===activeChannelIndex));updateMaster();}
+setActiveChannel(0);
+class MacroConsole{
+  constructor(){this.mode='recall';this.active=0;this.macros=this.load();this.grid=document.getElementById('macroGrid');this.tip=document.getElementById('macroTip');
+    this.duration=document.getElementById('macroDuration');this.curve=document.getElementById('macroCurve');this.duration.value=localStorage.getItem('ptz-macro-duration')||'6';this.curve.value=localStorage.getItem('ptz-macro-curve')||'s_curve';this.duration.onchange=()=>localStorage.setItem('ptz-macro-duration',String(this.settings().duration));this.curve.onchange=()=>localStorage.setItem('ptz-macro-curve',this.curve.value);
+    document.querySelectorAll('[data-macro-mode]').forEach(button=>button.onclick=()=>this.setMode(button.dataset.macroMode));this.render();}
+  load(){try{const value=JSON.parse(localStorage.getItem('ptz-scene-macros-v1')||'[]');return Array.isArray(value)?value:[];}catch(_e){return [];}}
+  save(){localStorage.setItem('ptz-scene-macros-v1',JSON.stringify(this.macros));}
+  item(n){return this.macros.find(x=>x.n===n)||{n,saved:false,name:`SCENE ${n}`,cameras:[],duration:6,curve:'s_curve'};}
+  settings(){const duration=clamp(Number(this.duration.value)||6,.5,60);this.duration.value=duration;return{duration,curve:this.curve.value};}
+  setMode(mode){this.mode=this.mode===mode?'recall':mode;document.querySelectorAll('[data-macro-mode]').forEach(b=>b.classList.toggle('active',b.dataset.macroMode===this.mode));
+    const labels={recall:'按巨集鍵，三台 Pocket 3 依同一秒數與曲線移動',store:'選一格記錄三台位置、秒數與動態曲線',rename:'選一格重新命名巨集',delete:'選一格刪除巨集'};this.tip.textContent=labels[this.mode];}
+  snapshot(){return channels.map((channel,index)=>{const p=channel.position;if(!channel.online||!p||![p.pan,p.tilt,p.zoom].every(Number.isFinite))throw new Error(`CAMERA ${index+1} 尚未連線或位置未就緒`);return{pan:p.pan,tilt:p.tilt,zoom:p.zoom};});}
+  async use(n){const item=this.item(n);
+    if(this.mode==='store'){let cameras;try{cameras=this.snapshot();}catch(e){alert(e.message);return;}const name=prompt(`儲存三機巨集 ${n} 的名稱`,item.saved?item.name:`場景 ${n}`);if(name===null)return;const m=this.settings(),next={n,saved:true,name:(name.trim()||`場景 ${n}`).slice(0,32),cameras,duration:m.duration,curve:m.curve};this.macros=this.macros.filter(x=>x.n!==n);this.macros.push(next);this.save();}
+    else if(this.mode==='rename'){if(!item.saved)return;const name=prompt(`重新命名三機巨集 ${n}`,item.name);if(name===null||!name.trim())return;item.name=name.trim().slice(0,32);this.save();}
+    else if(this.mode==='delete'){if(!item.saved||!confirm(`刪除巨集「${item.name}」？`))return;this.macros=this.macros.filter(x=>x.n!==n);if(this.active===n)this.active=0;this.save();}
+    else{if(!item.saved||item.cameras.length!==3)return;this.active=n;this.render();document.getElementById('macroStatus').textContent=`RUNNING · ${item.name}`;
+      const duration=clamp(Number(item.duration)||6,.5,60),curve=item.curve||'s_curve';channels.forEach((channel,i)=>{const p=item.cameras[i];channel.disableTracking();channel.moving=true;channel.api(`/goto?pan=${encodeURIComponent(p.pan)}&tilt=${encodeURIComponent(p.tilt)}&zoom=${encodeURIComponent(p.zoom)}&duration=${duration}&curve=${encodeURIComponent(curve)}`).catch(()=>{});});}
+    this.setMode('recall');this.render();}
+  updateMoving(){if(!this.active)return;const any=channels.some(c=>c.moving);if(!any){const item=this.item(this.active);document.getElementById('macroStatus').textContent=`READY · ${item.name}`;this.active=0;}this.render();}
+  render(){this.grid.innerHTML='';for(let n=1;n<=10;n++){const item=this.item(n),button=document.createElement('button');button.className='hw macro'+(item.saved?' saved':'')+(this.active===n?' moving':'');button.innerHTML=`<b>${n}</b><span>${item.saved?`${this.escape(item.name)} · ${Number(item.duration||6).toFixed(1)}s`:'EMPTY'}</span>`;button.onclick=()=>this.use(n);this.grid.appendChild(button);}}
+  escape(value){const div=document.createElement('div');div.textContent=value;return div.innerHTML;}
+}
+macroConsole=new MacroConsole();
+function updateMaster(){const count=channels.filter(c=>c.online).length;document.getElementById('masterStatus').textContent=`${count} / 3 ONLINE · ACTIVE CAM ${activeChannelIndex+1}`;}
+document.getElementById('stopAll').onclick=()=>channels.forEach(channel=>channel.stop());
+if(directorApp){const heartbeat=()=>fetch('/director/heartbeat',{cache:'no-store'}).catch(()=>{});heartbeat();setInterval(heartbeat,2000);
+  const exit=document.getElementById('exitApp');exit.style.display='block';exit.onclick=async()=>{if(!confirm('完全結束 Pocket 3 導播控制台？'))return;channels.forEach(channel=>channel.stop());await new Promise(r=>setTimeout(r,120));fetch('/director/exit',{method:'POST',keepalive:true}).catch(()=>{});setTimeout(()=>window.close(),180);};}
+window.addEventListener('blur',()=>channels.forEach(channel=>channel.stop()));
+const keyboardKeys=new Set();let keyboardAxis='pan';
+const typingTarget=target=>target?.matches?.('input,select,textarea,[contenteditable="true"]');
+function applyKeyboardMotion(){const channel=channels[activeChannelIndex];if(!channel)return;let pan=0,tilt=0;
+  if(keyboardAxis==='pan'){if(keyboardKeys.has('ArrowLeft'))pan=-1;else if(keyboardKeys.has('ArrowRight'))pan=1;}
+  else{if(keyboardKeys.has('ArrowUp'))tilt=1;else if(keyboardKeys.has('ArrowDown'))tilt=-1;}
+  if(!pan&&!tilt){if(keyboardKeys.has('ArrowLeft'))pan=-1;else if(keyboardKeys.has('ArrowRight'))pan=1;else if(keyboardKeys.has('ArrowUp'))tilt=1;else if(keyboardKeys.has('ArrowDown'))tilt=-1;}
+  channel.keyboardMove(pan,tilt);
+}
+document.addEventListener('keydown',event=>{if(typingTarget(event.target))return;
+  if(['1','2','3'].includes(event.key)){setActiveChannel(Number(event.key)-1);event.preventDefault();return;}
+  if(event.code==='Space'){event.preventDefault();if(event.shiftKey)channels.forEach(channel=>channel.stop());else channels[activeChannelIndex].stop();return;}
+  if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(event.key)){event.preventDefault();if(event.repeat)return;keyboardKeys.add(event.key);keyboardAxis=(event.key==='ArrowLeft'||event.key==='ArrowRight')?'pan':'tilt';applyKeyboardMotion();return;}
+  if(['Equal','NumpadAdd'].includes(event.code)||event.key==='+'){event.preventDefault();channels[activeChannelIndex].keyboardZoom(1);return;}
+  if(['Minus','NumpadSubtract'].includes(event.code)||event.key==='-'){event.preventDefault();channels[activeChannelIndex].keyboardZoom(-1);}
+});
+document.addEventListener('keyup',event=>{if(typingTarget(event.target))return;if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(event.key)){event.preventDefault();keyboardKeys.delete(event.key);applyKeyboardMotion();}
+  if(['Equal','NumpadAdd','Minus','NumpadSubtract'].includes(event.code)||event.key==='+'||event.key==='-'){event.preventDefault();channels[activeChannelIndex].keyboardZoom(0);}});
+</script>
+</body>
+</html>

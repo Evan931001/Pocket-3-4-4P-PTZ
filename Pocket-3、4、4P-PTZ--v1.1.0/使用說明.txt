@@ -1,0 +1,105 @@
+Pocket 3 PTZ LAN｜精簡版使用說明
+=================================
+
+一、第一次使用
+--------------
+1. 解壓縮整個資料夾，不要只拿單一 BAT 或 EXE。
+2. 雙擊 build-windows-exe.bat，等待建立 EXE 資料夾。
+3. 右鍵 allow-firewall-lan.bat → 以系統管理員身分執行。
+
+
+二、送畫面／相機電腦
+--------------------
+一般穩定模式：
+  Python：start-ptz.bat
+  EXE：start-five-cameras.bat
+
+正式轉播只使用 NDI（USB 負載最低）：
+  Python：start-ptz-ndi-only.bat
+  EXE：start-five-cameras-ndi-only.bat
+
+程式會自動偵測最多五台 DJI／Osmo／Pocket，跳過 OBS Virtual Camera，
+並依序分配：
+  CAMERA 1 = 8723
+  CAMERA 2 = 8724
+  CAMERA 3 = 8725
+  CAMERA 4 = 8726
+  CAMERA 5 = 8727
+
+新版 Multi Launcher 只保留一個 MASTER CONSOLE。Camera 1～5 節點會在
+背景執行，連線狀態、擷取模式、FPS 與 OBS 客戶數集中顯示在同一視窗。
+按 Ctrl+C 或關閉總控台會一起停止全部節點，不會留下多個黑窗或背景程序。
+
+若要登入 Windows 後自動啟動節點：install-node-autostart.bat
+若要取消：remove-node-autostart.bat
+
+
+三、導播台電腦
+--------------
+1. 執行 EXE\Pocket3-Director.exe。
+2. CAMERA 欄位填入送畫面電腦顯示的網址，例如：
+     http://192.168.0.137:8723
+     http://192.168.0.137:8724
+     http://192.168.0.137:8725
+3. 每個盤面不可填相同的 IP 與 Port。
+4. NDI-only 模式必須在 VIDEO SOURCE 選擇 NDI 訊號；不能選 DIRECT UVC LAN。
+5. 控制視窗只會開一次，關閉後不會自動重啟。
+
+導播台登入自動啟動：install-director-autostart.bat
+取消並停止舊背景程式：remove-director-autostart.bat
+
+
+四、三台以上訊號中斷
+--------------------
+優先使用 NDI-only 啟動檔。即使插在不同 USB 孔，也可能共用同一個
+USB Root Hub。若仍同時掉畫面、NDI 與 PTZ，請把相機分接主機板後方不同
+USB 控制器，並在裝置管理員取消 USB Root Hub 的省電關閉選項。
+
+若 PTZ 顯示 ONLINE、但單一路預覽是黑畫面或顯示 UVC RETRY：
+1. 確認該 CAMERA 的 Port 正確，例如第三台為 8725。
+2. 在該盤面的 VIDEO SOURCE 選 DIRECT UVC LAN 後按 REFRESH。
+3. REFRESH 會重新建立該路預覽；新版也會持續逐幀重連，不必重開 Director。
+
+
+五、UVC 與 OBS 搶相機
+---------------------
+同一台 Pocket 3 的 UVC 視訊通常不能同時被控制台預覽與 OBS 獨占開啟。
+要讓 OBS 收該台 UVC：在該 CAMERA 盤面的 VIDEO MONITOR 按「OBS MODE」。
+節點會停止預覽並釋放 UVC；PTZ 控制、Preset 與巨集仍可使用。
+
+按鍵顯示「UVC MODE」代表 UVC 已交給 OBS。若要恢復控制台直連預覽：
+1. 先在 OBS 停用或移除該台「視訊擷取裝置」。
+2. 按「UVC MODE」解除 OBS 優先。
+3. VIDEO SOURCE 選「DIRECT UVC LAN · 免 NDI」。
+
+若希望 OBS 與控制台同時都有畫面，請讓 OBS 獨占 UVC，再把 OBS 畫面
+輸出成 NDI，控制台 VIDEO SOURCE 選該 NDI；不要同時選 DIRECT UVC LAN。
+
+新版也提供節點共用輸出，不需要 NDI，畫質為 1280×720／最高 30fps：
+  CAMERA 1：http://送畫面電腦IP:8723/obs
+  CAMERA 2：http://送畫面電腦IP:8724/obs
+  CAMERA 3：http://送畫面電腦IP:8725/obs
+
+OBS 請新增「瀏覽器」來源，貼上 /obs 網址，寬 1280、高 720、FPS 30。
+此模式不要再新增同一台 Pocket 3 的「視訊擷取裝置」，也不要按 OBS MODE；
+PTZ Node 會只開一次 UVC，再同時供控制台 640×360／8fps 監看與 OBS
+720p30 使用。若三台同開不穩，請確認不同 USB Root Hub，或改回 NDI-only。
+
+若某台顯示追蹤框但畫面全黑，代表該相機接受了 UVC 連線卻不支援目前格式。
+新版會自動依序測試 720p30、720p15、640×360p30、640×360p15；狀態列會
+顯示 BLACK FRAME · FALLBACK，完成後顯示實際 CAPTURE MODE。4P 可維持
+720p30，較舊 Pocket 3 可各自降級，不會連帶修改其他相機。
+
+
+六、檔案用途
+------------
+build-windows-exe.bat              建置三支 EXE
+ptz-server.py                      單一相機 PTZ Node
+multi-ptz-launcher.py              自動偵測並啟動最多五台相機
+director-console.py                導播台本機服務
+director-panel.html                Blackmagic 風格控制介面
+ndi_preview.py                     NDI／Direct UVC 預覽與軟體追蹤
+allow-firewall-lan.bat             開放區網 TCP 8723～8727
+remove-firewall-rule.bat           移除防火牆規則
+
+設定檔會在第一次啟動後自動建立，不需要手動複製。
